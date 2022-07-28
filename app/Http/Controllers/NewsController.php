@@ -76,6 +76,37 @@ function getDetikNews()
     }
     dd($judul);
 }
+function getTribunNews()
+{
+    $client = new Client();
+
+    $res = $client->request('GET', 'https://www.tribunnews.com');
+    $shtml = str_get_html($res->getBody());
+    for ($i = 0; $i < 10; $i++) {
+        try {
+            $title = $shtml->find('div.bsh li.p1520 div.mr140 h3', $i)->plaintext;
+            $title = str_replace("\t", "", $title);
+            $date = $shtml->find('div.bsh li.p1520 div.mr140 div.pt5 time', $i)->plaintext;
+            $img = $shtml->find('div.bsh li.p1520 div.pos_rel img', $i)->src;
+            $link1 = $shtml->find('div.bsh li.p1520 div.pos_rel a', $i)->getAttribute('href');
+            $link = "https://www.tribunnews.com/" . $link1;
+            $source = "TribunNews";
+            $category = $shtml->find('div.bsh li.p1520 div.mr140 div.pt5 span a', $i)->plaintext;
+            $highline = $shtml->find('div.bsh li.p1520 div.mr140 div.txt-oev-2', $i)->plaintext;
+            $link = urlencode($link);
+            $link = urlencode($link);
+            $link = urlencode($link);
+            $tribun_news[] = new News($title, $date, $img, $link, $source, $highline, $category);
+
+            // $judul[] = $shtml->find('div.populer div.mr110 h3', $i)->plaintext;
+            // $time[] = $shtml->find('div.populer div.mr110 div.grey time', $i)->plaintext;
+        } catch (Exception $e) {
+        }
+    }
+    return (($tribun_news));
+
+    // dd($title, $date, $img, $link);
+}
 function getCnnNews()
 {
     $client = new Client();
@@ -113,7 +144,7 @@ function getCnnNews()
         } catch (Exception $e) {
         }
     }
-    return (json_encode($cnn_news));
+    return (($cnn_news));
 }
 function readCnnNews($link, $source)
 {
@@ -177,6 +208,98 @@ function readCnnNews($link, $source)
     $cnn_news_content[] = new NewsContent($content_title, $content_date, $content_img, $source, $paragraph, $content_category);
     return ($cnn_news_content);
 }
+function readTribunNews($link, $source)
+{
+    // dd("hai");
+    $client = new Client();
+
+    $res_content = $client->request('GET', $link);
+    $shtml_content = str_get_html($res_content->getBody());
+    if (count($shtml_content->find('div.paging  div.ovh a')) > 1) {
+        $res_content = $client->request('GET', $link . "?page=all");
+        $shtml_content = str_get_html($res_content->getBody());
+    }
+    $content_title = $shtml_content->find('div.bsh div#article h1.f50', 0)->plaintext;
+    $content_category = $shtml_content->find('div.bsh ul.breadcrumb li', 2)->plaintext;
+    $content_date = $shtml_content->find('div.bsh div#article div.mt10 time', 0)->plaintext;
+    $content_img = $shtml_content->find('div.bsh div#article div#article_con div#artimg div.imgfull_div a img.imgfull', 0)->src;
+    // dd($content_title, $content_category, $content_date, $content_img);
+    $content_source = $source;
+    $content = $shtml_content->find('div.txt-article', 0);
+    // dd($content->children);
+    $paragraph = [];
+    // $next_contents = [];
+    $img_index = 0;
+    foreach ($content->children as $i => $p) {
+        // !!Jangan Hapus Start
+        if ($p->tag == 'p') {
+            $paragraph[]['p'] = $p->plaintext;
+        } elseif ($p->tag == 'h1' || $p->tag == 'h2' || $p->tag == 'h3') {
+            $paragraph[]['sub'] = $p->plaintext;
+        } elseif ($p->tag == 'figure' && $p->getAttribute('class') == 'image') {
+            $content_img = $shtml_content->find('div.txt-article figure.image img', $img_index)->src;
+            $content_caption = $shtml_content->find('div.txt-article figure.image figcaption', $img_index)->plaintext;
+            $paragraph[] = ['img' => $content_img, 'caption' => $content_caption];
+            $img_index++;
+        } elseif ($p->tag == 'ul') {
+            foreach ($p->find('li') as $list) {
+                $paragraph[]['list'] = $list->plaintext;
+            }
+        }
+        //!!Buat next article Start
+        // elseif ($p->tag == 'div' && $p->getAttribute('class') == 'grid_row nav_article_long') {
+        //     $next_contents[] = $p->find('a', 0)->getAttribute('href');
+        // }
+        //!!next article End
+        // !!Jangan Hapus END
+        // if ($p->tag == 'div' && $p->getAttribute('class') == 'anchor_article_long') {
+        //     foreach ($p->find('a') as $next_link) {
+        //         $next_contents[] = $next_link->getAttribute('href');
+        //     }
+        // }
+        // if ($next_contents) {
+        //     foreach ($next_contents as $n_content) {
+        //         $res_n_content = $client->request('GET', $n_content);
+        //         $n_shtml_content = str_get_html($res_n_content->getBody());
+        //         $n_content = $n_shtml_content->find('div.detail_text', 0);
+        //     }
+        // }
+        // $paragraph[] = $p->tag;
+        // dd($p->tag);
+        // if ($p->getAttribute('id')) {
+        // } else {
+        //     $paragraph[] = $p->plaintext;
+        // }
+    }
+    // for ($j = 0; $j < count($shtml_content->find('div.paging  div.ovh a')); $j++) {
+    //     $next_link = $shtml_content->find('div.paging  div.ovh a', $j)->getAttribute('href');
+    //     $res_next_content = $client->request('GET', $next_link);
+    //     $shtml_next_content = str_get_html($res_next_content->getBody());
+    //     $next_contents = $shtml_next_content->find('div.txt-article', 0);
+
+    //     foreach ($next_contents->children as $i => $p) {
+    //         // !!Jangan Hapus Start
+    //         if ($p->tag == 'p') {
+    //             $paragraph[]['p'] = $p->plaintext;
+    //         } elseif ($p->tag == 'h1' || $p->tag == 'h2' || $p->tag == 'h3') {
+    //             $paragraph[]['sub'] = $p->plaintext;
+    //         } elseif ($p->tag == 'figure' && $p->getAttribute('class') == 'image') {
+    //             $content_img = $shtml_next_content->find('div.txt-article figure.image img', $img_index)->src;
+    //             $content_caption = $shtml_next_content->find('div.txt-article figure.image figcaption', $img_index)->plaintext;
+    //             $paragraph[] = ['img' => $content_img, 'caption' => $content_caption];
+    //             $img_index++;
+    //         } elseif ($p->tag == 'ul') {
+    //             foreach ($p->find('li') as $list) {
+    //                 $paragraph[]['list'] = $list->plaintext;
+    //             }
+    //         }
+    //     }
+    // }
+    // dd($next_contents);
+    // dd($paragraph);
+    $tribun_news_content[] = new NewsContent($content_title, $content_date, $content_img, $source, $paragraph, $content_category);
+    return ($tribun_news_content);
+}
 include(app_path() . "\Http\Controllers\simplehtmldom\simplehtmldom.php");
 class NewsController extends Controller
 {
@@ -209,9 +332,11 @@ class NewsController extends Controller
 
     public function getNews(Request $request)
     {
-        // return (getDetikNews());
+        // return array_merge(json_encode(getTribunNews(), true), json_encode(getCnnNews(), true));
+        return json_encode(array_merge(getTribunNews(), getCnnNews()));
+        // return (getTribunNews());
         // !!Get News CNN Start JANGAN HAPUS
-        return (getCnnNews());
+        // return (getCnnNews());
         // !!END CNN
 
 
@@ -221,7 +346,9 @@ class NewsController extends Controller
         $link = urldecode($link);
         $decode_link = urldecode($link);
         if ($source == 'CNN Indonesia') {
-            return ReadCnnNews($decode_link, $source);
+            return json_encode(ReadCnnNews($decode_link, $source));
+        } elseif ($source == "TribunNews") {
+            return ReadTribunNews($decode_link, $source);
         }
     }
 }

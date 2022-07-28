@@ -19,11 +19,6 @@
                                     <small class="text-muted d-block">{{ $news['source'] }}</small>
                                     <small class="text-muted d-block">{{ $news['date'] }}</small>
                                 </p>
-                                @php
-                                    $link = $news['link'];
-                                    $link = urlencode($link);
-                                    $link = urlencode($link);
-                                @endphp
                                 <a class="stretched-link" href="readnews/{{ $news['link'] }}/{{ $news['source'] }}"></a>
                                 {{-- <a class="stretched-link" href="readnews/{{ $link }}"></a> --}}
                             </div>

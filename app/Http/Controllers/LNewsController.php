@@ -24,6 +24,7 @@ class LNewsController extends Controller
     }
     public function readnews($link, $source)
     {
+        // dd($link, $source);
         // $source = str_replace(" ", "%", $source);
         // dd($link, $source);
         // dd('http://127.0.0.1:8000/api/readnews/' . $link . '/' . $source);
